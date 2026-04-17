@@ -1,213 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Hệ thống quản lý hồ sơ</title>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<style>
-body { background:#f4f6f9; }
-.sidebar {
-  width:220px;
-  position:fixed;
-  height:100vh;
-  background:#1e293b;
-  color:white;
-  padding:20px;
-}
-.sidebar h4 { margin-bottom:30px; }
-.sidebar button {
-  width:100%;
-  margin-bottom:10px;
-  border:none;
-  background:#334155;
-  color:white;
-  padding:10px;
-  border-radius:6px;
-}
-.sidebar button:hover { background:#475569; }
-
-.main {
-  margin-left:240px;
-  padding:20px;
-}
-
-.card-box {
-  background:white;
-  padding:20px;
-  border-radius:10px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.1);
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Hệ thống hồ sơ</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f5f5f5;
+    }
+    .box {
+      margin: 20px auto;
+      padding: 20px;
+      width: 300px;
+      background: white;
+      border-radius: 10px;
+    }
+    a {
+      display: block;
+      margin: 10px;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="sidebar">
-<h4>📁 Quản lý hồ sơ</h4>
-<button onclick="showSection('dashboard')">Dashboard</button>
-<button onclick="showSection('add')">Thêm hồ sơ</button>
-<button onclick="showSection('list')">Danh sách</button>
-<button onclick="exportExcel()">Xuất Excel</button>
+<h2>📂 Hệ thống quản lý hồ sơ</h2>
+
+<div class="box">
+  <a href="https://script.google.com/macros/s/AKfycbz-_ZWdyAzhY-fFOjRZflPB_n-qG7wIWOcUGHu7Vd7ZwyYNT4KDE7zfW6JWkl4mPnuLCA/exec">
+    ➤ Nhập hồ sơ
+  </a>
+
+  <!-- <a href="#">
+    ➤ Xem danh sách (sau này thêm)
+  </a>
+
+  <a href="#">
+    ➤ Báo cáo
+  </a>
+
+  <a href="#">
+    ➤ Quản trị
+  </a> -->
 </div>
-
-<div class="main">
-
-<h3>HỆ THỐNG QUẢN LÝ HỒ SƠ</h3>
-
-<!-- DASHBOARD -->
-<div id="dashboardSection">
-<div class="row mt-3">
-  <div class="col-md-4">
-    <div class="card-box">
-      <h6>Tổng hồ sơ</h6>
-      <h3 id="total">0</h3>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card-box">
-      <h6>Đang xử lý</h6>
-      <h3 id="dangXuLy">0</h3>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card-box">
-      <h6>Sắp đến hạn (3 ngày)</h6>
-      <h3 id="sapDenHan">0</h3>
-    </div>
-  </div>
-</div>
-
-<div class="card-box mt-4">
-  <canvas id="chartTrangThai"></canvas>
-</div>
-</div>
-
-<!-- ADD -->
-<div id="addSection" style="display:none;">
-<div class="card-box mt-3">
-<h5>Thêm hồ sơ</h5>
-
-<div class="row">
-  <div class="col-md-3"><input id="maHS" class="form-control" placeholder="Mã HS"></div>
-  <div class="col-md-3"><input id="loaiHS" class="form-control" placeholder="Loại HS"></div>
-  <div class="col-md-3"><input id="nguoiNop" class="form-control" placeholder="Người nộp"></div>
-  <div class="col-md-3"><input type="date" id="ngayNhan" class="form-control"></div>
-</div>
-
-<div class="row mt-2">
-  <div class="col-md-3"><input id="soNgay" class="form-control" placeholder="Số ngày"></div>
-  <div class="col-md-3"><input id="canBo" class="form-control" placeholder="Cán bộ"></div>
-  <div class="col-md-3"><input id="lePhi" class="form-control" placeholder="Lệ phí"></div>
-  <div class="col-md-3"><button class="btn btn-primary w-100" onclick="addHoSo()">Lưu</button></div>
-</div>
-
-</div>
-</div>
-
-<!-- LIST -->
-<div id="listSection" style="display:none;">
-<div class="card-box mt-3">
-<table id="tableHoSo" class="table table-striped" style="width:100%">
-<thead></thead>
-<tbody></tbody>
-</table>
-</div>
-</div>
-
-</div>
-
-<script>
-const API = "https://script.google.com/macros/s/AKfycbxkWj6q7dRXKfv1c7iTs_TJGxfaJ-W_VGH-gaSHQpy0gBwNbzvI7j8PUUFiAb7zzxY3Yw/exec";
-let table;
-let globalData=[];
-
-function showSection(name){
-  dashboardSection.style.display="none";
-  addSection.style.display="none";
-  listSection.style.display="none";
-
-  if(name==="dashboard") dashboardSection.style.display="block";
-  if(name==="add") addSection.style.display="block";
-  if(name==="list") listSection.style.display="block";
-}
-
-async function loadDashboard(){
-  const res = await fetch(API+"?action=dashboard");
-  const data = await res.json();
-
-  total.innerText=data.total;
-  dangXuLy.innerText=data.dangXuLy;
-  sapDenHan.innerText=data.sapDenHan;
-
-  drawChart(data);
-}
-
-function drawChart(data){
-  new Chart(document.getElementById("chartTrangThai"),{
-    type:"doughnut",
-    data:{
-      labels:["Đang xử lý","Sắp đến hạn"],
-      datasets:[{
-        data:[data.dangXuLy,data.sapDenHan]
-      }]
-    }
-  });
-}
-
-async function loadTable(){
-  const res = await fetch(API+"?action=getData");
-  const data = await res.json();
-  globalData=data;
-
-  if(table) table.destroy();
-
-  table = $('#tableHoSo').DataTable({
-    data: data.slice(1),
-    columns: data[0].map(h=>({title:h}))
-  });
-}
-
-async function addHoSo(){
-  const data={
-    maHS:maHS.value,
-    loaiHS:loaiHS.value,
-    nguoiNop:nguoiNop.value,
-    ngayNhan:ngayNhan.value,
-    soNgay:soNgay.value,
-    canBo:canBo.value,
-    lePhi:lePhi.value,
-    ghiChu:""
-  };
-
-  await fetch(API+"?action=add",{
-    method:"POST",
-    body:JSON.stringify(data)
-  });
-
-  alert("Đã lưu hồ sơ!");
-  loadDashboard();
-  loadTable();
-}
-
-function exportExcel(){
-  const ws = XLSX.utils.aoa_to_sheet(globalData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "HoSo");
-  XLSX.writeFile(wb,"DanhSachHoSo.xlsx");
-}
-
-loadDashboard();
-loadTable();
-</script>
 
 </body>
 </html>

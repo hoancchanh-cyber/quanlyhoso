@@ -1,262 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Hệ thống hồ sơ</title>
   <style>
-    :root { --nav-bg: #0f172a; --accent: #38bdf8; }
-    body { background: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
-    #sidebar { width: 260px; height: 100vh; position: fixed; background: var(--nav-bg); color: white; z-index: 100; }
-    #main-content { margin-left: 260px; padding: 30px; }
-    .nav-link { color: #94a3b8; cursor: pointer; padding: 12px 20px; border-left: 4px solid transparent; }
-    .nav-link.active { background: #1e293b; color: var(--accent); border-left-color: var(--accent); }
-    .card { border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; }
-    .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.8); display: none; place-items: center; z-index: 9999; }
-    .stat-card { transition: 0.2s; cursor: pointer; border-bottom: 4px solid rgba(0,0,0,0.1); }
-    .stat-card:hover { transform: translateY(-5px); filter: brightness(1.1); }
-    .stat-card h2 { font-size: 1.8rem; font-weight: 800; margin: 5px 0; }
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f5f5f5;
+    }
+    .box {
+      margin: 20px auto;
+      padding: 20px;
+      width: 300px;
+      background: white;
+      border-radius: 10px;
+    }
+    a {
+      display: block;
+      margin: 10px;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
-  <div id="loader" class="loader"><div class="spinner-border text-primary"></div></div>
 
-  <div id="section-login" class="d-flex align-items-center justify-content-center" style="height:100vh;">
-    <div class="card p-4 shadow-lg" style="width: 380px;">
-      <h4 class="text-center fw-bold mb-4">HỆ THỐNG QUẢN TRỊ</h4>
-      <input type="text" id="ipt-u" class="form-control mb-2" placeholder="Tài khoản">
-      <input type="password" id="ipt-p" class="form-control mb-3" placeholder="Mật khẩu">
-      <button class="btn btn-primary w-100 fw-bold py-2" onclick="doLogin()">ĐĂNG NHẬP</button>
-    </div>
-  </div>
+<h2>📂 Hệ thống quản lý hồ sơ</h2>
 
-  <div id="section-main" class="d-none">
-    <nav id="sidebar">
-      <div class="p-4 border-bottom border-secondary mb-3 text-center">
-        <h5 id="txt-user" class="text-info fw-bold mb-0">ADMIN</h5>
-      </div>
-      <div class="nav flex-column">
-        <div class="nav-link active" id="n-db" onclick="nav('db')">📊 Dashboard</div>
-        <div class="nav-link" id="n-mg" onclick="nav('mg')">📋 Hồ sơ chi tiết</div>
-        <div class="nav-link text-danger mt-5" onclick="logout()">🚪 Đăng xuất</div>
-      </div>
-    </nav>
+<div class="box">
+  <a href="https://script.google.com/macros/s/AKfycbz-_ZWdyAzhY-fFOjRZflPB_n-qG7wIWOcUGHu7Vd7ZwyYNT4KDE7zfW6JWkl4mPnuLCA/exec">
+    ➤ Nhập hồ sơ
+  </a>
 
-    <main id="main-content">
-      <div id="pg-db">
-        <div class="card p-4 mb-4">
-          <div class="row g-2 align-items-end">
-            <div class="col-md-3"><label class="small fw-bold">Từ ngày</label><input type="date" id="f-from" class="form-control"></div>
-            <div class="col-md-3"><label class="small fw-bold">Đến ngày</label><input type="date" id="f-to" class="form-control"></div>
-            <div class="col-md-3">
-              <label class="small fw-bold">Trạng thái</label>
-              <select id="f-status" class="form-select">
-                <option value="Tất cả">-- Tất cả --</option>
-                <option value="Hoàn thành">Hoàn thành</option>
-                <option value="Đang xử lý">Đang xử lý</option>
-                <option value="Huỷ">Huỷ</option>
-              </select>
-            </div>
-            <div class="col-md-3"><button class="btn btn-dark w-100 fw-bold" onclick="resetAndFilter()">LỌC DỮ LIỆU</button></div>
-          </div>
-        </div>
+  <!-- <a href="#">
+    ➤ Xem danh sách (sau này thêm)
+  </a>
 
-        <div class="row g-3 mb-4 text-center text-white">
-          <div class="col-md-3"><div class="card p-3 bg-primary stat-card" onclick="quickFilter('Tất cả')"><small>TỔNG HỒ SƠ</small><h2 id="st-total">0</h2></div></div>
-          <div class="col-md-3"><div class="card p-3 bg-success stat-card" onclick="quickFilter('Hoàn thành')"><small>HOÀN THÀNH</small><h2 id="st-completed">0</h2></div></div>
-          <div class="col-md-3"><div class="card p-3 bg-warning text-dark stat-card" onclick="quickFilter('Đang xử lý')"><small>ĐANG XỬ LÝ</small><h2 id="st-processing">0</h2></div></div>
-          <div class="col-md-3"><div class="card p-3 bg-danger stat-card" onclick="quickFilter('Huỷ')"><small>ĐÃ HUỶ</small><h2 id="st-cancelled">0</h2></div></div>
-        </div>
+  <a href="#">
+    ➤ Báo cáo
+  </a>
 
-        <div class="card p-3 mb-4 border-start border-success border-4 shadow-sm">
-          <div class="d-flex justify-content-between align-items-center px-2">
-            <div><span class="fw-bold text-muted small">TỔNG LỆ PHÍ:</span><h3 id="st-fee" class="fw-bold text-success m-0">0 đ</h3></div>
-            <div class="text-end"><span class="fw-bold text-muted small">TRUNG BÌNH:</span><h4 id="st-avg" class="fw-bold text-dark m-0">0 đ</h4></div>
-          </div>
-        </div>
+  <a href="#">
+    ➤ Quản trị
+  </a>
+</div> -->
 
-        <div class="row g-4">
-          <div class="col-md-5"><div class="card p-4"><h6>Tỉ lệ Trạng thái</h6><div style="height:300px"><canvas id="c-pie"></canvas></div></div></div>
-          <div class="col-md-7"><div class="card p-4"><h6>Doanh thu theo Lĩnh vực</h6><div style="height:300px"><canvas id="c-bar"></canvas></div></div></div>
-        </div>
-      </div>
-
-      <div id="pg-mg" class="d-none">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h4 class="fw-bold m-0" id="txt-list-title">Danh sách hồ sơ</h4>
-          <div>
-            <button class="btn btn-outline-success me-2 fw-bold" onclick="exportExcel()">🟢 Xuất Excel</button>
-            <button class="btn btn-primary px-4 fw-bold shadow-sm" onclick="openAdd()">+ Thêm mới</button>
-          </div>
-        </div>
-        <div class="card shadow-sm">
-          <table class="table table-hover align-middle m-0">
-            <thead class="table-light">
-              <tr><th>Ngày</th><th>Mã HS</th><th>Lĩnh vực</th><th>Số biên lai</th><th>Lệ phí</th><th>Trạng thái</th><th class="text-end px-4">Thao tác</th></tr>
-            </thead>
-            <tbody id="tbl-body"></tbody>
-          </table>
-          <div class="card-footer bg-white d-flex justify-content-between align-items-center p-3">
-            <span id="txt-page-info" class="small fw-bold text-muted"></span>
-            <nav><ul class="pagination pagination-sm m-0" id="pagination-ctrl"></ul></nav>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <div class="modal fade" id="md-rec" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content border-0 shadow-lg">
-    <div class="modal-header border-0 p-4 pb-0"><h5 class="fw-bold">CHI TIẾT HỒ SƠ</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-    <div class="modal-body p-4">
-      <input type="hidden" id="f-id">
-      <div class="row g-3">
-        <div class="col-md-6"><label class="small fw-bold">Mã hồ sơ</label><input type="text" id="f-ma" class="form-control"></div>
-        <div class="col-md-6"><label class="small fw-bold text-primary">Lĩnh vực</label>
-          <select id="f-lv" class="form-select border-primary" onchange="syncCategory()">
-            <option value="">-- Chọn --</option>
-            <option value="Kinh doanh">Kinh doanh</option><option value="Hộ tịch">Hộ tịch</option>
-            <option value="Đất đai">Đất đai</option><option value="Chứng thực">Chứng thực</option>
-          </select>
-        </div>
-        <div class="col-md-12"><label class="small fw-bold text-primary">Loại hồ sơ</label><select id="f-loai" class="form-select border-primary"></select></div>
-        <div class="col-md-4"><label class="small fw-bold">Lệ phí (VNĐ)</label><input type="number" id="f-phi" class="form-control"></div>
-        <div class="col-md-4"><label class="small fw-bold">Số biên lai</label><input type="text" id="f-bl" class="form-control"></div>
-        <div class="col-md-4"><label class="small fw-bold">Trạng thái</label>
-          <select id="f-tt" class="form-select">
-            <option value="Hoàn thành">Hoàn thành</option><option value="Đang xử lý">Đang xử lý</option><option value="Huỷ">Huỷ</option>
-          </select>
-        </div>
-        <div class="col-12"><label class="small fw-bold">Ghi chú</label><textarea id="f-gc" class="form-control" rows="2"></textarea></div>
-      </div>
-    </div>
-    <div class="modal-footer border-0 p-4 pt-0"><button class="btn btn-primary w-100 fw-bold py-2 shadow" onclick="save()">LƯU DỮ LIỆU</button></div>
-  </div></div></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    const DATA_MAP = {
-      "Chứng thực": ["Chứng thực chữ ký", "Chứng thực hợp đồng", "Chứng thực văn bản"],
-      "Kinh doanh": ["Kinh doanh"],
-      "Hộ tịch": ["Trích lục","XNTTHN","Khai sinh","Khai tử","Kết hôn"],
-      "Đất đai": ["Cấp đổi","Gia hạn","Đính chính","Tách hợp thửa"]
-    };
-    let rawData = [], filteredData = [], currentPage = 1, pageSize = 10, charts = {}, activeLinhVuc = null;
-
-    function doLogin() {
-      toggleLoader(true);
-      google.script.run.withSuccessHandler(res => {
-        toggleLoader(false);
-        if(res && res.success) {
-          document.getElementById('txt-user').innerText = res.user;
-          document.getElementById('section-login').classList.add('d-none');
-          document.getElementById('section-main').classList.remove('d-none');
-          loadData();
-        } else alert("Sai thông tin đăng nhập!");
-      }).checkLogin(document.getElementById('ipt-u').value, document.getElementById('ipt-p').value);
-    }
-
-    function loadData() {
-      toggleLoader(true);
-      google.script.run.withSuccessHandler(res => { toggleLoader(false); rawData = res.records || []; applyFilter(); }).getAppData();
-    }
-
-    function syncCategory(preSelect = "") {
-      const lv = document.getElementById('f-lv').value, loai = document.getElementById('f-loai');
-      loai.innerHTML = '<option value="">-- Chọn loại hồ sơ --</option>';
-      if (DATA_MAP[lv]) {
-        DATA_MAP[lv].forEach(i => { loai.innerHTML += `<option value="${i}">${i}</option>`; });
-        if(preSelect) loai.value = preSelect;
-      }
-    }
-
-    function applyFilter() {
-      const from = document.getElementById('f-from').value;
-      const to = document.getElementById('f-to').value;
-      const statusFilter = document.getElementById('f-status').value;
-      const fTime = from ? new Date(from).setHours(0,0,0,0) : -Infinity;
-      const tTime = to ? new Date(to).setHours(23,59,59,999) : Infinity;
-
-      const dateData = rawData.filter(r => r.ngayValue >= fTime && r.ngayValue <= tTime);
-      filteredData = dateData.filter(r => {
-        return (statusFilter === "Tất cả" || r.trangThai === statusFilter) && (!activeLinhVuc || r.linhVuc === activeLinhVuc);
-      });
-
-      const stats = { total: dateData.length, ok: 0, pen: 0, fail: 0, rev: 0, byStatus: {}, byLV: {} };
-      dateData.forEach(r => {
-        if (r.trangThai === "Hoàn thành") stats.ok++; else if (r.trangThai === "Huỷ") stats.fail++; else stats.pen++;
-        if (r.trangThai !== "Huỷ") stats.rev += (r.lePhi || 0);
-        stats.byStatus[r.trangThai] = (stats.byStatus[r.trangThai] || 0) + 1;
-        if (r.linhVuc && r.trangThai !== "Huỷ") stats.byLV[r.linhVuc] = (stats.byLV[r.linhVuc] || 0) + r.lePhi;
-      });
-      
-      document.getElementById('st-total').innerText = stats.total;
-      document.getElementById('st-completed').innerText = stats.ok;
-      document.getElementById('st-processing').innerText = stats.pen;
-      document.getElementById('st-cancelled').innerText = stats.fail;
-      document.getElementById('st-fee').innerText = stats.rev.toLocaleString('vi-VN') + " đ";
-      document.getElementById('st-avg').innerText = (stats.total > 0 ? Math.round(stats.rev/stats.total) : 0).toLocaleString('vi-VN') + " đ";
-      
-      drawCharts(stats);
-      changePage(1);
-    }
-
-    function drawCharts(s) {
-      if(charts.pie) charts.pie.destroy();
-      charts.pie = new Chart(document.getElementById('c-pie'), { type: 'doughnut', data: { labels: Object.keys(s.byStatus), datasets: [{ data: Object.values(s.byStatus), backgroundColor: ['#198754','#ffc107','#dc3545','#0d6efd'] }] }, options: { maintainAspectRatio: false } });
-      if(charts.bar) charts.bar.destroy();
-      charts.bar = new Chart(document.getElementById('c-bar'), { type: 'bar', data: { labels: Object.keys(s.byLV), datasets: [{ label: 'VNĐ', data: Object.values(s.byLV), backgroundColor: '#38bdf8' }] }, options: { maintainAspectRatio: false, onClick: (e, el) => { if(el.length > 0) { activeLinhVuc = Object.keys(s.byLV)[el[0].index]; document.getElementById('txt-list-title').innerText = "Lĩnh vực: " + activeLinhVuc; nav('mg'); applyFilter(); } } } });
-    }
-
-    function renderTable() {
-      const pageData = filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-      document.getElementById('tbl-body').innerHTML = pageData.map(r => `<tr>
-        <td class="small text-muted">${r.ngayDisplay}</td>
-        <td class="fw-bold text-primary">${r.maHoSo}</td>
-        <td>${r.linhVuc}</td>
-        <td class="fw-bold text-info">${r.soBienLai || '-'}</td>
-        <td class="fw-bold text-success">${(r.lePhi || 0).toLocaleString('vi-VN')}</td>
-        <td><span class="badge ${r.trangThai=='Hoàn thành'?'bg-success':(r.trangThai=='Huỷ'?'bg-danger':'bg-warning text-dark')}">${r.trangThai}</span></td>
-        <td class="text-end px-3">
-          <button class="btn btn-sm btn-outline-primary border-0" onclick='openEdit(${JSON.stringify(r)})'>Sửa</button>
-          <button class="btn btn-sm btn-outline-danger border-0" onclick="del(${r.rowId})">Xoá</button>
-        </td></tr>`).join('') || '<tr><td colspan="7" class="text-center p-4">Trống</td></tr>';
-      renderPagination();
-    }
-
-    function renderPagination() {
-      const total = Math.ceil(filteredData.length / pageSize) || 1;
-      document.getElementById('txt-page-info').innerText = `Trang ${currentPage}/${total}`;
-      let h = `<li class="page-item ${currentPage<=1?'disabled':''}"><a class="page-link" href="#" onclick="changePage(${currentPage-1})">«</a></li>`;
-      for(let i=1;i<=total;i++) if(i==1||i==total||(i>=currentPage-1&&i<=currentPage+1)) h+=`<li class="page-item ${i==currentPage?'active':''}"><a class="page-link" href="#" onclick="changePage(${i})">${i}</a></li>`;
-      h += `<li class="page-item ${currentPage>=total?'disabled':''}"><a class="page-link" href="#" onclick="changePage(${currentPage+1})">»</a></li>`;
-      document.getElementById('pagination-ctrl').innerHTML = h;
-    }
-
-    function save() {
-      const obj = { rowId: document.getElementById('f-id').value, maHoSo: document.getElementById('f-ma').value, linhVuc: document.getElementById('f-lv').value, loaiHoSo: document.getElementById('f-loai').value, lePhi: document.getElementById('f-phi').value, soBienLai: document.getElementById('f-bl').value, trangThai: document.getElementById('f-tt').value, ghiChu: document.getElementById('f-gc').value };
-      if(!obj.maHoSo || !obj.linhVuc) return alert("Vui lòng điền đủ thông tin!");
-      toggleLoader(true);
-      google.script.run.withSuccessHandler(() => { bootstrap.Modal.getInstance(document.getElementById('md-rec')).hide(); loadData(); }).saveRecord(obj);
-    }
-
-    function openEdit(r) {
-      document.getElementById('f-id').value = r.rowId; document.getElementById('f-ma').value = r.maHoSo;
-      document.getElementById('f-lv').value = r.linhVuc; syncCategory(r.loaiHoSo);
-      document.getElementById('f-phi').value = r.lePhi; document.getElementById('f-bl').value = r.soBienLai;
-      document.getElementById('f-tt').value = r.trangThai; document.getElementById('f-gc').value = r.ghiChu;
-      new bootstrap.Modal(document.getElementById('md-rec')).show();
-    }
-
-    function openAdd() { document.getElementById('f-id').value = ""; document.getElementById('f-ma').value = ""; document.getElementById('f-phi').value = ""; document.getElementById('f-bl').value = ""; document.getElementById('f-gc').value = ""; syncCategory(); new bootstrap.Modal(document.getElementById('md-rec')).show(); }
-    function del(id) { if(confirm("Xoá hồ sơ?")) { toggleLoader(true); google.script.run.withSuccessHandler(() => loadData()).deleteRecord(id); } }
-    function changePage(p) { currentPage = p; renderTable(); }
-    function nav(p) { document.getElementById('pg-db').classList.toggle('d-none', p!='db'); document.getElementById('pg-mg').classList.toggle('d-none', p!='mg'); document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active')); document.getElementById('n-'+p).classList.add('active'); }
-    function resetAndFilter() { activeLinhVuc = null; document.getElementById('txt-list-title').innerText = "Danh sách hồ sơ"; applyFilter(); }
-    function quickFilter(st) { activeLinhVuc = null; document.getElementById('f-status').value = st; nav('mg'); applyFilter(); }
-    function exportExcel() { const d = filteredData.map(r => ({ "Ngày": r.ngayDisplay, "Mã HS": r.maHoSo, "Lĩnh vực": r.linhVuc, "Loại": r.loaiHoSo, "Tiền": r.lePhi, "Biên lai": r.soBienLai, "Trạng thái": r.trangThai })); const ws = XLSX.utils.json_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Bao_Cao.xlsx"); }
-    function logout() { google.script.run.withSuccessHandler(url => window.top.location.href=url).getScriptUrl(); }
-    function toggleLoader(s) { document.getElementById('loader').style.display = s ? 'grid' : 'none'; }
-  </script>
 </body>
 </html>

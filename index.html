@@ -2,194 +2,168 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Hệ thống điều hành công việc</title>
+<title>Lịch công việc chung</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
 
 <style>
 body {
-  margin: 0;
   font-family: 'Inter', sans-serif;
   background: #eef2f7;
+  margin: 0;
 }
 
-/* HEADER */
 .header {
   background: #1e293b;
   color: white;
   padding: 15px;
-  display: flex;
-  justify-content: space-between;
 }
 
-/* LAYOUT */
-.main {
+.container {
   display: flex;
-}
-
-/* SIDEBAR */
-.sidebar {
-  width: 250px;
-  background: #1e293b;
-  color: white;
-  height: 100vh;
   padding: 20px;
+  gap: 20px;
 }
 
-.sidebar a {
-  display: block;
-  padding: 10px;
-  color: white;
-  text-decoration: none;
-  margin: 5px 0;
+.menu {
+  width: 250px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
 }
 
-.sidebar a:hover {
-  background: #334155;
-}
-
-/* CONTENT */
 .content {
   flex: 1;
-  padding: 20px;
-}
-
-/* TABLE */
-table {
-  width: 100%;
-  border-collapse: collapse;
   background: white;
+  padding: 20px;
+  border-radius: 10px;
 }
 
-th, td {
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.day {
+  background: #f1f5f9;
   padding: 10px;
-  border-bottom: 1px solid #ddd;
-}
-
-.status {
-  padding: 5px;
-  border-radius: 5px;
+  min-height: 100px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
-.done { background: #16a34a; color: white; }
-.processing { background: #f59e0b; }
-.todo { background: #ef4444; color: white; }
+.note {
+  font-size: 12px;
+  margin-top: 5px;
+  background: #dbeafe;
+  padding: 3px;
+  border-radius: 4px;
+}
 
-/* BUTTON */
-button {
-  padding: 8px;
-  margin-top: 10px;
+/* modal */
+.modal {
+  display: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  width: 300px;
+  margin: 10% auto;
+  border-radius: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <div>📊 Hệ thống điều hành công việc</div>
-  <div>
-    👤 <input id="user" placeholder="Tên..." />
-  </div>
-</div>
+<div class="header">📅 Lịch công việc chung</div>
 
-<div class="main">
+<div class="container">
 
-<div class="sidebar">
-  <h3>Menu</h3>
-  <a href="#">Dashboard</a>
-  <a href="#">Lịch công việc</a>
-  <a href="#">Thống kê</a>
+<div class="menu">
+  <h4>Người dùng</h4>
+  <input id="username" placeholder="Nhập tên..." />
 </div>
 
 <div class="content">
-
-<h3>➕ Thêm công việc</h3>
-<input id="date" type="date"><br>
-<input id="note" placeholder="Nội dung"><br>
-<input id="assign" placeholder="Giao cho ai"><br>
-<button onclick="add()">Thêm</button>
-
-<h3>📋 Danh sách công việc</h3>
-<table>
-<thead>
-<tr>
-<th>Ngày</th>
-<th>Nội dung</th>
-<th>Người giao</th>
-<th>Người làm</th>
-<th>Trạng thái</th>
-</tr>
-</thead>
-<tbody id="table"></tbody>
-</table>
+  <div id="calendar" class="calendar"></div>
+</div>
 
 </div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h4>Nhập công việc</h4>
+    <textarea id="note" style="width:100%"></textarea>
+    <button onclick="save()">Lưu</button>
+  </div>
 </div>
 
 <script>
-const API = "DÁN_LINK_APPS_SCRIPT";
+const API = "DÁN_LINK_APPS_SCRIPT_VÀO_ĐÂY";
 
+let selectedDate = "";
 let dataGlobal = [];
 
-async function load() {
+/* load dữ liệu */
+async function loadData() {
   const res = await fetch(API);
   dataGlobal = await res.json();
-  render();
+  renderCalendar();
 }
 
-function render() {
-  let html = "";
-  for (let i = 1; i < dataGlobal.length; i++) {
-    let row = dataGlobal[i];
+function renderCalendar() {
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
 
-    let cls = "todo";
-    if (row[5] == "Đang xử lý") cls = "processing";
-    if (row[5] == "Hoàn thành") cls = "done";
+  for (let i = 1; i <= 30; i++) {
+    let div = document.createElement("div");
+    div.className = "day";
+    div.innerHTML = "<b>" + i + "</b>";
 
-    html += `
-    <tr>
-      <td>${row[1]}</td>
-      <td>${row[2]}</td>
-      <td>${row[3]}</td>
-      <td>${row[4]}</td>
-      <td>
-        <span class="status ${cls}" onclick="update('${row[0]}')">
-          ${row[5]}
-        </span>
-      </td>
-    </tr>`;
+    let dateStr = "2026-04-" + String(i).padStart(2,'0');
+
+    dataGlobal.forEach(row => {
+      if (row[0] === dateStr) {
+        let note = document.createElement("div");
+        note.className = "note";
+        note.innerText = row[1] + " (" + row[2] + ")";
+        div.appendChild(note);
+      }
+    });
+
+    div.onclick = () => {
+      selectedDate = dateStr;
+      document.getElementById("modal").style.display = "block";
+    };
+
+    cal.appendChild(div);
   }
-
-  document.getElementById("table").innerHTML = html;
 }
 
-async function add() {
+async function save() {
+  const note = document.getElementById("note").value;
+  const user = document.getElementById("username").value;
+
   await fetch(API, {
     method: "POST",
     body: JSON.stringify({
-      date: document.getElementById("date").value,
-      note: document.getElementById("note").value,
-      assigner: document.getElementById("user").value,
-      assignee: document.getElementById("assign").value
+      date: selectedDate,
+      note: note,
+      user: user
     })
   });
 
   location.reload();
 }
 
-async function update(id) {
-  let status = prompt("Nhập trạng thái: Chưa làm / Đang xử lý / Hoàn thành");
-
-  await fetch(API, {
-    method: "PUT",
-    body: JSON.stringify({ id: id, status: status })
-  });
-
-  location.reload();
-}
-
-load();
+loadData();
 </script>
 
 </body>

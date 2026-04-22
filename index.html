@@ -184,7 +184,7 @@ th, td {
 </div>
 
 <script>
-const API = "DÁN_LINK_APPS_SCRIPT";
+const API = "https://script.google.com/macros/s/AKfycbwgjQWBSm-pcZH-aOc3RCmBdRoU1kNNv6y9hXtkImNxSqBieTflg-sR-lY_4y3pD3X7/exec";
 
 let dataGlobal = [];
 
@@ -224,7 +224,7 @@ function render() {
     if (row[5] == "Đang xử lý") cls = "processing";
     if (row[5] == "Hoàn thành") cls = "done";
 
-    html += `
+    html += 
     <tr>
       <td>${row[1]}</td>
       <td>${row[2]}</td>
@@ -235,7 +235,7 @@ function render() {
           ${row[5]}
         </span>
       </td>
-    </tr>`;
+    </tr>;
   }
 
   document.getElementById("table").innerHTML = html;

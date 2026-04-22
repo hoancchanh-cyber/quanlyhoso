@@ -2,276 +2,134 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Cổng nội bộ cơ quan</title>
+<title>Cổng nội bộ</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background: #eef2f7;
+  background: linear-gradient(135deg, #eef2f7, #dfe9f3);
 }
 
 /* HEADER */
 .header {
   background: #1e293b;
   color: white;
-  padding: 15px 20px;
+  padding: 15px 30px;
   display: flex;
   justify-content: space-between;
 }
 
-/* LAYOUT */
-.main {
-  display: flex;
-}
-
-/* SIDEBAR */
-.sidebar {
-  width: 260px;
-  background: #1e293b;
-  color: white;
-  height: 100vh;
-  padding: 20px;
-}
-
-.sidebar h3 {
-  margin-bottom: 15px;
-}
-
-.menu-item {
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin: 5px 0;
-}
-
-.menu-item:hover {
-  background: #334155;
-}
-
-/* CONTENT */
-.content {
-  flex: 1;
-  padding: 20px;
-}
-
-/* CARD DASHBOARD */
-.cards {
-  display: flex;
+/* GRID */
+.container {
+  padding: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
 
+/* CARD */
 .card {
-  flex: 1;
   background: white;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+
+.card h3 {
+  margin-bottom: 15px;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+/* LINK */
+.link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  background: #2563eb;
+  transition: 0.25s;
+}
+
+.link:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+/* COLORS */
+.green { background: #16a34a; }
+.orange { background: #ea580c; }
+.gray { background: #64748b; }
+
+/* FOOTER */
+.footer {
   text-align: center;
-}
-
-/* TABLE */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
   margin-top: 20px;
+  color: #64748b;
+  font-size: 12px;
 }
-
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-}
-
-.status {
-  padding: 5px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.done { background: #16a34a; color: white; }
-.processing { background: #f59e0b; }
-.todo { background: #ef4444; color: white; }
-
-/* hidden */
-.hidden { display: none; }
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <div>🏢 Cổng nội bộ</div>
-  <div>👤 <input id="user" placeholder="Tên..." /></div>
+  <div>🏢 Cổng nội bộ cơ quan</div>
+  <div>📅 2026</div>
 </div>
 
-<div class="main">
+<div class="container">
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <h3>Hệ thống</h3>
+  <!-- HỒ SƠ -->
+  <div class="card">
+    <h3>📂 Hồ sơ</h3>
 
-  <div class="menu-item" onclick="openPage('dashboard')">📊 Trang chủ</div>
-
-  <div class="menu-item" onclick="openPage('work')">📋 Công việc</div>
-
-  <div class="menu-item" onclick="go('https://script.google.com/macros/s/AKfycbx40W9Yg2r5BqMCWglhK59LR_Tg1tD91jGkvv4kQHxoygvwTOtP8pz-bng4PK3OiDow8A/exec')">
-    📂 Quản lý hồ sơ
+    <a class="link" target="_blank"
+      href="https://script.google.com/macros/s/AKfycbx40W9Yg2r5BqMCWglhK59LR_Tg1tD91jGkvv4kQHxoygvwTOtP8pz-bng4PK3OiDow8A/exec">
+      Quản lý hồ sơ ➜
+    </a>
   </div>
 
-  <div class="menu-item" onclick="go('https://dieuphoi.dichvucong.gov.vn/login')">
-    🌐 Điều phối TTHC
+  <!-- HÀNH CHÍNH -->
+  <div class="card">
+    <h3>🌐 Hành chính</h3>
+
+    <a class="link green" target="_blank"
+      href="https://dieuphoi.dichvucong.gov.vn/login">
+      Điều phối TTHC ➜
+    </a>
+
+    <a class="link orange" target="_blank"
+      href="https://quantricong.dichvucong.gov.vn">
+      TTHC mới ➜
+    </a>
   </div>
 
-  <div class="menu-item" onclick="go('https://quantricong.dichvucong.gov.vn')">
-    🆕 TTHC mới
+  <!-- MỞ RỘNG -->
+  <div class="card">
+    <h3>⚙️ Hệ thống khác</h3>
+
+    <a class="link gray" target="_blank" href="#">
+      Email công vụ ➜
+    </a>
+
+    <a class="link gray" target="_blank" href="#">
+      Văn bản điện tử ➜
+    </a>
   </div>
 
 </div>
 
-<!-- CONTENT -->
-<div class="content">
-
-<!-- DASHBOARD -->
-<div id="dashboard">
-  <h2>📊 Tổng quan</h2>
-
-  <div class="cards">
-    <div class="card">
-      <h3 id="total">0</h3>
-      Tổng công việc
-    </div>
-
-    <div class="card">
-      <h3 id="done">0</h3>
-      Hoàn thành
-    </div>
-
-    <div class="card">
-      <h3 id="processing">0</h3>
-      Đang xử lý
-    </div>
-  </div>
+<div class="footer">
+  © 2026 - Hệ thống nội bộ
 </div>
-
-<!-- WORK -->
-<div id="work" class="hidden">
-
-<h2>📋 Quản lý công việc</h2>
-
-<input id="date" type="date">
-<input id="note" placeholder="Nội dung">
-<input id="assign" placeholder="Giao cho ai">
-<button onclick="add()">Thêm</button>
-
-<table>
-<thead>
-<tr>
-<th>Ngày</th>
-<th>Nội dung</th>
-<th>Người giao</th>
-<th>Người làm</th>
-<th>Trạng thái</th>
-</tr>
-</thead>
-<tbody id="table"></tbody>
-</table>
-
-</div>
-
-</div>
-</div>
-
-<script>
-const API = "https://script.google.com/macros/s/AKfycbwgjQWBSm-pcZH-aOc3RCmBdRoU1kNNv6y9hXtkImNxSqBieTflg-sR-lY_4y3pD3X7/exec";
-
-let dataGlobal = [];
-
-/* chuyển trang */
-function openPage(page) {
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("work").classList.add("hidden");
-
-  document.getElementById(page).classList.remove("hidden");
-}
-
-/* mở link ngoài */
-function go(url) {
-  window.open(url, "_blank");
-}
-
-/* load dữ liệu */
-async function load() {
-  const res = await fetch(API);
-  dataGlobal = await res.json();
-  render();
-}
-
-function render() {
-  let total = dataGlobal.length - 1;
-  let done = 0, processing = 0;
-
-  let html = "";
-
-  for (let i = 1; i < dataGlobal.length; i++) {
-    let row = dataGlobal[i];
-
-    if (row[5] == "Hoàn thành") done++;
-    if (row[5] == "Đang xử lý") processing++;
-
-    let cls = "todo";
-    if (row[5] == "Đang xử lý") cls = "processing";
-    if (row[5] == "Hoàn thành") cls = "done";
-
-    html += 
-    <tr>
-      <td>${row[1]}</td>
-      <td>${row[2]}</td>
-      <td>${row[3]}</td>
-      <td>${row[4]}</td>
-      <td>
-        <span class="status ${cls}" onclick="update('${row[0]}')">
-          ${row[5]}
-        </span>
-      </td>
-    </tr>;
-  }
-
-  document.getElementById("table").innerHTML = html;
-
-  document.getElementById("total").innerText = total;
-  document.getElementById("done").innerText = done;
-  document.getElementById("processing").innerText = processing;
-}
-
-async function add() {
-  await fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
-      date: document.getElementById("date").value,
-      note: document.getElementById("note").value,
-      assigner: document.getElementById("user").value,
-      assignee: document.getElementById("assign").value
-    })
-  });
-
-  location.reload();
-}
-
-async function update(id) {
-  let status = prompt("Chọn: Chưa làm / Đang xử lý / Hoàn thành");
-
-  await fetch(API, {
-    method: "PUT",
-    body: JSON.stringify({ id: id, status: status })
-  });
-
-  location.reload();
-}
-
-load();
-</script>
 
 </body>
 </html>

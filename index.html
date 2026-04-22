@@ -1,119 +1,428 @@
-<script>
-const API = "https://script.google.com/macros/s/AKfycbwgjQWBSm-pcZH-aOc3RCmBdRoU1kNNv6y9hXtkImNxSqBieTflg-sR-lY_4y3pD3X7/exec";
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-main: #f1f5f9;
+      --sidebar-bg: #0f172a;
+      --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
 
-let dataGlobal = [];
+    body { 
+      background: var(--bg-main); 
+      font-family: 'Inter', sans-serif;
+      color: #1e293b;
+    }
 
-/* chuyển trang */
-function openPage(page) {
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("work").classList.add("hidden");
+    .loader {
+      position: fixed; inset: 0; background: rgba(255,255,255,0.8);
+      display: none; place-items: center; z-index: 2000; backdrop-filter: blur(5px);
+    }
 
-  document.getElementById(page).classList.remove("hidden");
-}
+    /* Sidebar */
+    .sidebar { 
+      width: 260px; height: 100vh; position: fixed; 
+      background: var(--sidebar-bg); color: white; z-index: 100; transition: all 0.3s;
+    }
+    
+    .nav-link { 
+      color: #94a3b8; margin: 8px 16px; border-radius: 10px;
+      padding: 12px 15px; display: flex; align-items: center; transition: 0.2s; cursor: pointer;
+    }
+    
+    .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    
+    .nav-link.active { 
+      background: var(--primary); color: white;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
 
-/* mở link ngoài */
-function go(url) {
-  window.open(url, "_blank");
-}
+    .main-content { margin-left: 260px; padding: 30px; transition: 0.3s; }
 
-/* load dữ liệu */
-async function load() {
-  try {
-    const res = await fetch(API);
-    dataGlobal = await res.json();
-    render();
-  } catch (e) {
-    alert("Không tải được dữ liệu!");
-  }
-}
+    /* Card & Stats */
+    .stat-card { 
+      border: none; border-radius: 20px; padding: 24px; color: white; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; cursor: pointer;
+    }
+    
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    
+    .stat-icon { position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.2; }
 
-/* render */
-function render() {
-  let user = document.getElementById("user").value;
+    .card-custom {
+      border: none; border-radius: 20px; background: white;
+      box-shadow: var(--card-shadow); margin-bottom: 24px;
+    }
 
-  let total = 0, done = 0, processing = 0;
-  let html = "";
+    /* Table */
+    .table thead th { 
+      background: #f8fafc; text-transform: uppercase; font-size: 0.75rem; 
+      letter-spacing: 0.05em; padding: 15px; border-bottom: 1px solid #e2e8f0;
+    }
+    .table tbody td { padding: 15px; border-bottom: 1px solid #f1f5f9; }
 
-  for (let i = 1; i < dataGlobal.length; i++) {
-    let row = dataGlobal[i];
+    /* Badges */
+    .badge-status { padding: 6px 12px; border-radius: 30px; font-weight: 600; font-size: 0.7rem; }
+    .bg-soft-success { background: #dcfce7; color: #15803d; }
+    .bg-soft-warning { background: #fef9c3; color: #a16207; }
+    .bg-soft-danger { background: #fee2e2; color: #b91c1c; }
 
-    /* lọc theo người (nếu có nhập tên) */
-    if (user && row[4] !== user) continue;
+    .form-control, .form-select { border-radius: 10px; padding: 10px 15px; border: 1px solid #e2e8f0; }
 
-    total++;
+    @media (max-width: 768px) {
+      .sidebar { width: 70px; }
+      .sidebar .nav-link span, .sidebar h5, .sidebar div.small { display: none; }
+      .main-content { margin-left: 70px; padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loader" class="loader"><div class="spinner-grow text-primary"></div></div>
 
-    if (row[5] == "Hoàn thành") done++;
-    if (row[5] == "Đang xử lý") processing++;
+  <div id="section-login" class="d-flex align-items-center justify-content-center" style="height:100vh; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);">
+    <div class="card p-4 shadow-lg border-0" style="width: 380px; border-radius: 24px;">
+      <div class="text-center mb-4">
+        <div class="bg-primary d-inline-block p-3 rounded-circle mb-3 shadow">
+          <i class="bi bi-shield-lock-fill text-white fs-3"></i>
+        </div>
+        <h4 class="fw-bold text-dark">Hệ Thống Hồ Sơ</h4>
+        <p class="text-muted small">Vui lòng đăng nhập để tiếp tục</p>
+      </div>
+      <div class="mb-3">
+        <label class="small fw-bold mb-1">Tài khoản</label>
+        <input type="text" id="ipt-u" class="form-control" placeholder="admin">
+      </div>
+      <div class="mb-4">
+        <label class="small fw-bold mb-1">Mật khẩu</label>
+        <input type="password" id="ipt-p" class="form-control" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary w-100 fw-bold py-2" onclick="doLogin()">Đăng Nhập</button>
+    </div>
+  </div>
 
-    let cls = "todo";
-    if (row[5] == "Đang xử lý") cls = "processing";
-    if (row[5] == "Hoàn thành") cls = "done";
+  <div id="section-main" class="d-none">
+    <div class="sidebar shadow">
+      <div class="p-4 mb-3 text-center">
+        <h5 id="txt-user" class="fw-bold text-white m-0 text-uppercase">ADMIN</h5>
+        <div class="small text-info opacity-75">Quản trị viên</div>
+      </div>
+      <div class="nav flex-column">
+        <a class="nav-link active" id="n-db" onclick="nav('db')">
+          <i class="bi bi-grid-1x2-fill me-3"></i><span>Tổng quan</span>
+        </a>
+        <a class="nav-link" id="n-mg" onclick="nav('mg')">
+          <i class="bi bi-archive-fill me-3"></i><span>Danh sách hồ sơ</span>
+        </a>
+        <div style="margin-top: auto; padding-bottom: 20px; width: 100%;">
+          <hr class="mx-3 opacity-25">
+          <a class="nav-link text-danger" onclick="logout()">
+            <i class="bi bi-power me-3"></i><span>Đăng xuất</span>
+          </a>
+        </div>
+      </div>
+    </div>
 
-    html += `
-    <tr>
-      <td>${row[1]}</td>
-      <td>${row[2]}</td>
-      <td>${row[3]}</td>
-      <td>${row[4]}</td>
-      <td>
-        <span class="status ${cls}" onclick="update('${row[0]}','${row[5]}')">
-          ${row[5]}
-        </span>
-      </td>
-    </tr>`;
-  }
+    <div class="main-content">
+      <div id="pg-db">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="fw-bold m-0 text-dark">Bảng Điều Khiển</h4>
+          <div class="text-muted small"><i class="bi bi-calendar3 me-2"></i>Cập nhật: 2026</div>
+        </div>
 
-  document.getElementById("table").innerHTML = html;
-  document.getElementById("total").innerText = total;
-  document.getElementById("done").innerText = done;
-  document.getElementById("processing").innerText = processing;
-}
+        <div class="card card-custom p-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+              <label class="small fw-bold text-muted mb-1">Từ ngày</label>
+              <input type="date" id="f-from" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="small fw-bold text-muted mb-1">Đến ngày</label>
+              <input type="date" id="f-to" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="small fw-bold text-muted mb-1">Đơn vị quản lý</label>
+              <select id="f-filter-bo" class="form-select"><option value="Tất cả">Tất cả Bộ Ngành</option></select>
+            </div>
+            <div class="col-md-2">
+              <button class="btn btn-dark w-100 fw-bold" onclick="applyFilter()">Lọc Kết Quả</button>
+            </div>
+          </div>
+        </div>
 
-/* thêm công việc */
-async function add() {
-  const date = document.getElementById("date").value;
-  const note = document.getElementById("note").value;
-  const user = document.getElementById("user").value;
-  const assign = document.getElementById("assign").value;
+        <div class="row g-4 mb-4">
+          <div class="col-md-3"><div class="stat-card" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);" onclick="viewDetails('Tất cả')"><i class="bi bi-collection stat-icon"></i><div class="small">Tổng hồ sơ</div><h2 id="st-total" class="fw-bold m-0">0</h2></div></div>
+          <div class="col-md-3"><div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="viewDetails('Hoàn thành')"><i class="bi bi-check-circle stat-icon"></i><div class="small">Đã hoàn thành</div><h2 id="st-ok" class="fw-bold m-0">0</h2></div></div>
+          <div class="col-md-3"><div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" onclick="viewDetails('Đang xử lý')"><i class="bi bi-clock-history stat-icon"></i><div class="small">Đang xử lý</div><h2 id="st-pen" class="fw-bold m-0">0</h2></div></div>
+          <div class="col-md-3"><div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);" onclick="viewDetails('Huỷ')"><i class="bi bi-x-octagon stat-icon"></i><div class="small">Đã hủy bỏ</div><h2 id="st-fail" class="fw-bold m-0">0</h2></div></div>
+        </div>
 
-  if (!date || !note || !user || !assign) {
-    alert("Nhập đầy đủ thông tin!");
-    return;
-  }
+        <div class="row g-4">
+          <div class="col-md-7">
+            <div class="card card-custom p-4 h-100">
+              <h6 class="fw-bold mb-3 text-primary">Doanh Thu Theo Bộ Ngành</h6>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead><tr><th>Bộ Ngành</th><th class="text-center">Số lượng</th><th class="text-end">Thành tiền</th></tr></thead>
+                  <tbody id="tbl-fee-stats"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="card card-custom p-4 h-100">
+              <h6 class="fw-bold mb-4 text-primary text-center">Tỉ Lệ Trạng Thái</h6>
+              <div style="height:280px"><canvas id="c-pie"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  await fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
-      date: date,
-      note: note,
-      assigner: user,
-      assignee: assign
-    })
-  });
+      <div id="pg-mg" class="d-none">
+        <div class="card card-custom">
+          <div class="p-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <h5 class="fw-bold m-0">Dữ Liệu Chi Tiết</h5>
+            <div class="d-flex gap-2">
+              <div class="input-group" style="width: 250px;">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="ipt-search" class="form-control border-start-0 ps-0" placeholder="Tìm mã hồ sơ..." onkeyup="searchByCode()">
+              </div>
+              <button class="btn btn-outline-success" onclick="exportExcel()"><i class="bi bi-file-earmark-excel-fill"></i></button>
+              <button class="btn btn-primary fw-bold" onclick="openAdd()"><i class="bi bi-plus-lg me-2"></i>THÊM MỚI</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Ngày tạo</th><th>Mã hồ sơ</th><th>Bộ Ngành</th><th>Lĩnh vực</th><th>Lệ phí</th><th>Trạng thái</th><th class="text-end pe-4">Thao tác</th></tr></thead>
+              <tbody id="tbl-body"></tbody>
+            </table>
+          </div>
+          <div class="p-3 bg-light d-flex justify-content-between align-items-center rounded-bottom-4">
+            <span id="txt-page-info" class="small fw-medium text-muted"></span>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-white border" onclick="changePage(-1)">Trước</button>
+              <button class="btn btn-sm btn-white border" onclick="changePage(1)">Sau</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  load(); // reload nhẹ, không refresh trang
-}
+  <div class="modal fade" id="md-rec" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow" style="border-radius:24px;">
+        <div class="modal-header border-0 pb-0 pe-4 pt-4">
+          <h5 class="fw-bold m-0 text-primary">CHI TIẾT HỒ SƠ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="f-id">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="small fw-bold">Mã hồ sơ *</label><input type="text" id="f-ma" class="form-control" placeholder="HS-000"></div>
+            <div class="col-md-6"><label class="small fw-bold">Bộ Ngành</label><select id="f-bo" class="form-select"></select></div>
+            <div class="col-md-6"><label class="small fw-bold">Lĩnh vực</label>
+              <select id="f-lv" class="form-select" onchange="syncCategory()">
+                <option value="VHXH">VHXH</option><option value="Kinh doanh">Kinh doanh</option><option value="Hộ tịch">Hộ tịch</option><option value="Đất đai">Đất đai</option><option value="Chứng thực">Chứng thực</option>
+              </select>
+            </div>
+            <div class="col-md-6"><label class="small fw-bold">Loại chi tiết</label><select id="f-loai" class="form-select"></select></div>
+            <div class="col-md-4"><label class="small fw-bold">Lệ phí</label><input type="number" id="f-phi" class="form-control"></div>
+            <div class="col-md-4"><label class="small fw-bold">Số biên lai</label><input type="text" id="f-bl" class="form-control"></div>
+            <div class="col-md-4"><label class="small fw-bold">Trạng thái</label>
+              <select id="f-tt" class="form-select">
+                <option value="Hoàn thành">Hoàn thành</option><option value="Đang xử lý">Đang xử lý</option><option value="Huỷ">Huỷ</option>
+              </select>
+            </div>
+            <div class="col-12"><label class="small fw-bold">Ghi chú</label><textarea id="f-gc" class="form-control" rows="2"></textarea></div>
+          </div>
+        </div>
+        <div class="p-4 pt-0"><button class="btn btn-primary w-100 fw-bold py-3 shadow" onclick="save()">LƯU HỒ SƠ</button></div>
+      </div>
+    </div>
+  </div>
 
-/* cập nhật trạng thái */
-async function update(id, currentStatus) {
-  let next = "";
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const BO_LIST = ["Tư pháp", "TNMT", "KHĐT", "VHTT", "Nội vụ", "Công an"];
+    const MAP = { "VHXH": ["Chế độ CS", "Văn hóa", "Giáo dục"], "Chứng thực": ["Chữ ký", "Hợp đồng"], "Kinh doanh": ["Hộ cá thể", "HTX"], "Hộ tịch": ["Khai sinh", "Kết hôn"], "Đất đai": ["Cấp đổi", "Gia hạn"] };
+    let rawData = [], filteredData = [], currentPage = 1, pageSize = 10, charts = {};
 
-  if (currentStatus == "Chưa làm") next = "Đang xử lý";
-  else if (currentStatus == "Đang xử lý") next = "Hoàn thành";
-  else next = "Chưa làm";
+    function toggleLoader(s) { document.getElementById('loader').style.display = s ? 'grid' : 'none'; }
+    
+    function doLogin() {
+      const u = document.getElementById('ipt-u').value, p = document.getElementById('ipt-p').value;
+      toggleLoader(true);
+      google.script.run.withSuccessHandler(res => {
+        toggleLoader(false);
+        if(res.success) {
+          document.getElementById('section-login').classList.add('d-none');
+          document.getElementById('section-main').classList.remove('d-none');
+          document.getElementById('txt-user').innerText = res.fullName;
+          initUI(); loadData();
+        } else alert("Sai thông tin đăng nhập!");
+      }).checkLogin(u, p);
+    }
 
-  if (!confirm("Chuyển trạng thái sang: " + next + "?")) return;
+    function initUI() {
+      const sels = [document.getElementById('f-bo'), document.getElementById('f-filter-bo')];
+      sels.forEach(s => { if(s.options.length <= 1) BO_LIST.forEach(b => s.add(new Option(b, b))); });
+      syncCategory();
+    }
 
-  await fetch(API, {
-    method: "PUT",
-    body: JSON.stringify({ id: id, status: next })
-  });
+    function loadData() {
+      toggleLoader(true);
+      google.script.run.withSuccessHandler(res => {
+        toggleLoader(false);
+        if(res.success) { rawData = res.records; applyFilter(); }
+      }).getAppData();
+    }
 
-  load();
-}
+    function applyFilter() {
+      const f = document.getElementById('f-from').value, t = document.getElementById('f-to').value, bo = document.getElementById('f-filter-bo').value;
+      filteredData = rawData.filter(r => (f ? r.ngayISO >= f : true) && (t ? r.ngayISO <= t : true) && (bo === "Tất cả" || r.boNganh === bo));
+      currentPage = 1; updateUI();
+    }
 
-/* tự động lọc khi nhập tên */
-document.getElementById("user").addEventListener("input", render);
+    function updateUI() {
+      let st = { total: filteredData.length, ok: 0, pen: 0, fail: 0 }, boFee = {}, boCount = {}, stC = {};
+      filteredData.forEach(r => {
+        if(r.trangThai === "Hoàn thành") st.ok++; else if(r.trangThai === "Huỷ") st.fail++; else st.pen++;
+        if(r.trangThai !== "Huỷ") {
+          let p = Number(r.lePhi) || 0;
+          boFee[r.boNganh] = (boFee[r.boNganh] || 0) + p;
+          boCount[r.boNganh] = (boCount[r.boNganh] || 0) + 1;
+        }
+        stC[r.trangThai] = (stC[r.trangThai] || 0) + 1;
+      });
 
-load();
-</script>
+      document.getElementById('st-total').innerText = st.total;
+      document.getElementById('st-ok').innerText = st.ok;
+      document.getElementById('st-pen').innerText = st.pen;
+      document.getElementById('st-fail').innerText = st.fail;
+
+      let html = "";
+      Object.keys(boFee).sort().forEach(b => {
+        html += `<tr><td><span class="fw-bold">${b}</span></td><td class="text-center">${boCount[b]}</td><td class="text-end fw-bold text-primary">${boFee[b].toLocaleString()} đ</td></tr>`;
+      });
+      document.getElementById('tbl-fee-stats').innerHTML = html || '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
+      
+      renderTable(); drawChart(stC);
+    }
+
+    function getStatusBadge(status) {
+      if(status === 'Hoàn thành') return '<span class="badge-status bg-soft-success">Hoàn thành</span>';
+      if(status === 'Huỷ') return '<span class="badge-status bg-soft-danger">Đã huỷ</span>';
+      return '<span class="badge-status bg-soft-warning">Đang xử lý</span>';
+    }
+
+    function renderTable() {
+      const start = (currentPage - 1) * pageSize, data = filteredData.slice(start, start + pageSize);
+      document.getElementById('tbl-body').innerHTML = data.map(r => `
+        <tr>
+          <td><small class="text-muted">${r.ngayDisplay}</small></td>
+          <td><span class="fw-bold text-dark">${r.maHoSo}</span></td>
+          <td>${r.boNganh}</td>
+          <td><small>${r.linhVuc}</small></td>
+          <td class="fw-bold text-primary">${Number(r.lePhi).toLocaleString()} đ</td>
+          <td>${getStatusBadge(r.trangThai)}</td>
+          <td class="text-end pe-4">
+            <button class="btn btn-sm btn-light border me-1" onclick='openEdit(${JSON.stringify(r)})'><i class="bi bi-pencil-square"></i></button>
+            <button class="btn btn-sm btn-outline-danger border-0" onclick='del(${r.rowId})'><i class="bi bi-trash3"></i></button>
+          </td>
+        </tr>`).join('');
+      document.getElementById('txt-page-info').innerText = `Trang ${currentPage}/${Math.ceil(filteredData.length/pageSize) || 1}`;
+    }
+
+    function drawChart(st) {
+      if(charts.pie) charts.pie.destroy();
+      const ctx = document.getElementById('c-pie').getContext('2d');
+      charts.pie = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(st),
+          datasets: [{ data: Object.values(st), backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderWeight: 0 }]
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
+      });
+    }
+
+    function save() {
+      const obj = {
+        rowId: document.getElementById('f-id').value,
+        maHoSo: document.getElementById('f-ma').value,
+        boNganh: document.getElementById('f-bo').value,
+        linhVuc: document.getElementById('f-lv').value,
+        loaiHoSo: document.getElementById('f-loai').value,
+        lePhi: document.getElementById('f-phi').value,
+        trangThai: document.getElementById('f-tt').value,
+        soBienLai: document.getElementById('f-bl').value,
+        ghiChu: document.getElementById('f-gc').value
+      };
+      if(!obj.maHoSo) return alert("Vui lòng nhập mã hồ sơ!");
+      toggleLoader(true);
+      google.script.run.withSuccessHandler(() => { toggleLoader(false); bootstrap.Modal.getInstance(document.getElementById('md-rec')).hide(); loadData(); }).saveRecord(obj);
+    }
+
+    function openEdit(r) {
+      document.getElementById('f-id').value = r.rowId;
+      document.getElementById('f-ma').value = r.maHoSo;
+      document.getElementById('f-bo').value = r.boNganh;
+      document.getElementById('f-lv').value = r.linhVuc;
+      syncCategory(r.loaiHoSo);
+      document.getElementById('f-phi').value = r.lePhi;
+      document.getElementById('f-tt').value = r.trangThai;
+      document.getElementById('f-bl').value = r.soBienLai;
+      document.getElementById('f-gc').value = r.ghiChu;
+      new bootstrap.Modal(document.getElementById('md-rec')).show();
+    }
+
+    function openAdd() {
+      document.getElementById('f-id').value = "";
+      document.getElementById('f-ma').value = "";
+      document.getElementById('f-phi').value = "0";
+      document.getElementById('f-bl').value = "";
+      document.getElementById('f-gc').value = "";
+      new bootstrap.Modal(document.getElementById('md-rec')).show();
+    }
+
+    function del(id) { if(confirm("Xác nhận xóa hồ sơ này?")) { toggleLoader(true); google.script.run.withSuccessHandler(() => loadData()).deleteRecord(id); } }
+    function syncCategory(pre = "") {
+      const lv = document.getElementById('f-lv').value, sel = document.getElementById('f-loai');
+      sel.innerHTML = "";
+      if(MAP[lv]) MAP[lv].forEach(i => sel.add(new Option(i, i)));
+      if(pre) sel.value = pre;
+    }
+    function nav(p) {
+      document.getElementById('pg-db').classList.toggle('d-none', p !== 'db');
+      document.getElementById('pg-mg').classList.toggle('d-none', p !== 'mg');
+      document.getElementById('n-db').classList.toggle('active', p === 'db');
+      document.getElementById('n-mg').classList.toggle('active', p === 'mg');
+    }
+    function changePage(s) { currentPage += s; if(currentPage < 1) currentPage = 1; renderTable(); }
+    function logout() { google.script.run.withSuccessHandler(url => window.top.location.href = url).getScriptUrl(); }
+    function exportExcel() {
+      const data = filteredData.map(r => ({ "Ngày": r.ngayDisplay, "Mã": r.maHoSo, "Bộ": r.boNganh, "Lệ phí": r.lePhi, "Trạng thái": r.trangThai }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "HoSo");
+      XLSX.writeFile(wb, "BaoCao.xlsx");
+    }
+    function viewDetails(status) { nav('mg'); filteredData = rawData.filter(r => status === 'Tất cả' || r.trangThai === status); currentPage = 1; renderTable(); }
+    function searchByCode() {
+      const v = document.getElementById('ipt-search').value.toLowerCase();
+      filteredData = rawData.filter(r => r.maHoSo.toLowerCase().includes(v));
+      currentPage = 1; renderTable();
+    }
+  </script>
+</body>
+</html>
